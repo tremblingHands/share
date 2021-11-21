@@ -1,0 +1,104 @@
+
+1. = 默认move语义。copy trait不支持drop方法
+2. 可以通过裸指针将不可变引用转换为可变指针，例如`unsafe {let p = &}`，但是不安全，应使用refcell
+3. mdev drop?misc_deregister(&mut self.mdev)?
+
+
+
+
+
+
+
+
+
+
+
+struct User {
+    value: u64,
+    name: String,
+}
+
+struct ListNode {
+    val: i32,
+    next: Option<Box<ListNode>>,
+}
+
+impl ListNode {
+    fn new(i: i32) -> Self {
+        ListNode {
+            val: i,
+            next: None,
+        }
+    }
+
+    fn add_l(&mut self, l: &Vec<i32>) {
+        let mut head = self;
+        for data in l {
+            head.next = Some(Box::new(Self::new(*data)));
+            //head = &(*head.next.unwrap());
+            head = (head.next.as_mut()).unwrap();
+            //head = (head.next.unwrap()).as_mut();
+        }
+
+    }
+}
+
+fn out(a: &Box::<User>) {
+    println!("a = value: {}, name: {}", a.value, a.name);
+}
+
+fn out1(a: &User) {
+    println!("a = value: {}, name: {}", a.value, a.name);
+}
+
+fn cpy(a: &Box::<User>) {
+    let b = &(*a);
+    out1(b);
+
+}
+
+fn cpy1(a: &mut Box::<User>) {
+    let b = &mut (*a);
+    b.value = 115;
+}
+
+fn main() {
+    println!("test borrow rules");
+    let mut a = Box::new(User {
+        value: 5,
+        name: String::from("hello"),
+    });
+    out(&a);
+    *a = User {
+        value: 10,
+        name: String::from("world"),
+    };
+    out(&a);
+    cpy(&a);
+
+
+    let mut b = Box::new(User {
+        value: 15,
+        name: String::from("hello b"),
+    });
+    cpy1(&mut b);
+
+    println!("test multi mute");
+
+    
+    let mut c = Box::new(User {
+        value: 5,
+        name: String::from("hello c"),
+    });
+
+    let d = &mut c;
+    let e = &mut c.value;
+    //d.value = 1;
+    *e = 2;
+
+    println!("test list");
+
+    let mut head = ListNode::new(0);
+    let vv = vec![1, 2, 3];
+    head.add_l(&vv);
+}
